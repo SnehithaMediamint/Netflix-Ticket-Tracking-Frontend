@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import ReusableTable from '../../components/table/ReusableTable';
-import DatePicker from 'react-datepicker';
 import Select from 'react-select';
 import 'react-datepicker/dist/react-datepicker.css';
 import "../../style/Style.css";
 import { Card } from 'react-bootstrap';
-
+import { Download } from 'lucide-react';
 const Tickets = () => {
   const [showDateRange, setShowDateRange] = useState(false);
   const [startDate, setStartDate] = useState(null);
@@ -20,45 +19,35 @@ const Tickets = () => {
   ];
 
   const [selectedRegions, setSelectedRegions] = useState([]);
+  const [selectedCM, setSelectedCM] = useState(null);
+  const [selectedTicketId, setSelectedTicketId] = useState(null);
 
-  const [projects, setProjects] = useState(() => {
-    const stored = localStorage.getItem('ticketTimers');
-    if (stored) {
-      return JSON.parse(stored);
+  const [projects, setProjects] = useState([
+    {
+      id: 'TKT001',
+      assignedDateTime: '2025-07-20 10:00 AM',
+      endTimestamp: Date.now() + 2 * 60 * 60 * 1000,
+      agent: 'Alice',
+      qm: 'John Doe',
+      region: 'EMEA'
+    },
+    {
+      id: 'TKT002',
+      assignedDateTime: '2025-07-19 2:30 PM',
+      endTimestamp: Date.now() + 25 * 60 * 1000,
+      agent: 'Alice',
+      qm: 'John Doe',
+      region: 'EMEA'
+    },
+    {
+      id: 'TKT005',
+      assignedDateTime: '2025-07-18 4:45 PM',
+      endTimestamp: Date.now() + 9 * 60 * 1000,
+      agent: 'Alice',
+      qm: 'John Doe',
+      region: 'EMEA'
     }
-
-    return [
-      {
-        id: 'TKT001',
-        assignedDateTime: '2025-07-20 10:00 AM',
-        endTimestamp: Date.now() + 2 * 60 * 60 * 1000,
-        agent: 'Alice',
-        qm: 'John Doe'
-      },
-      {
-        id: 'TKT002',
-        assignedDateTime: '2025-07-19 2:30 PM',
-        endTimestamp: Date.now() + 3 * 60 * 60 * 1000,
-        agent: 'Alice',
-        qm: 'John Doe'
-      },
-      {
-        id: 'TKT003',
-        assignedDateTime: '2025-07-18 4:45 PM',
-        endTimestamp: Date.now() + 30 * 60 * 1000,
-        agent: 'Alice',
-        qm: 'John Doe'
-      },
-       {
-        id: 'TKT003',
-        assignedDateTime: '2025-07-18 4:45 PM',
-        endTimestamp: Date.now() + 30 * 60 * 1000,
-        agent: 'Snehitha',
-        qm: 'John Doe'
-      },
-      
-    ];
-  });
+  ]);
 
   useEffect(() => {
     localStorage.setItem('ticketTimers', JSON.stringify(projects));
@@ -86,14 +75,35 @@ const Tickets = () => {
     return () => clearInterval(interval);
   }, [projects]);
 
-  const handleDateRangeClick = () => {
-    setShowDateRange(!showDateRange);
-  };
-
   const columns = [
-    { label: 'S. No', key: 'sno', render: (_, index) => index + 1 },
-    { label: 'Ticket ID', key: 'id' },
-    { label: 'Assigned Date & Time', key: 'assignedDateTime' },
+    {
+      label: 'S. No',
+      key: 'sno',
+      render: (_, index) => index + 1
+    },
+    {
+      label: 'Ticket ID',
+      key: 'id',
+      render: (row) => {
+        const timeStr = timers[row.id] || '00:00:00';
+        const [h, m, s] = timeStr.split(':').map(Number);
+        const totalSeconds = h * 3600 + m * 60 + s;
+
+        let badgeClass = 'bg-success'; // green
+        if (totalSeconds <= 1800 && totalSeconds > 600) badgeClass = 'bg-warning text-dark'; // orange
+        if (totalSeconds <= 600) badgeClass = 'bg-danger'; // red
+
+        return (
+          <span className={`badge ${badgeClass}`} style={{ fontSize: '0.9rem' }}>
+            {row.id}
+          </span>
+        );
+      }
+    },
+    {
+      label: 'Assigned Date & Time',
+      key: 'assignedDateTime'
+    },
     {
       label: (
         <div>
@@ -108,77 +118,131 @@ const Tickets = () => {
         const totalSeconds = h * 3600 + m * 60 + s;
 
         let color = 'green';
-        if (totalSeconds <= 300 && totalSeconds > 0) color = 'orange'; // less than 5 min
-        if (totalSeconds === 0) color = 'red';
+        if (totalSeconds <= 1800 && totalSeconds > 600) color = 'orange';
+        if (totalSeconds <= 600) color = 'red';
 
         return (
-          <span style={{ color, fontWeight: 'bold' }}>
-            {timeStr}
-          </span>
+          <span style={{ color, fontWeight: 'bold' }}>{timeStr}</span>
         );
       }
     },
     ...(user?.role !== 'cm' ? [{ label: 'Name of CM', key: 'qm' }] : []),
-    { label: 'Name of AM', key: 'agent' }
+    {
+      label: 'Name of AM',
+      key: 'agent'
+    },
+    {
+      label: 'Region',
+      key: 'region'
+    }
   ];
 
   return (
     <div className="p-4">
       <Card>
-        <h1 className="mb-3 fs-1" style={{ fontSize: "16px" }}><strong>Tickets List</strong></h1>
-        <small className="mb-3" style={{ fontSize: "16px" }}><strong>Count: {projects.length}</strong></small>
+        <h1 className="mb-3 fs-1" style={{ fontSize: "16px" }}>
+          <strong>{user?.role === "qm" ? "Tickets List" : "Tickets List"}</strong>
+        </h1>
 
-        {/* Filter Buttons */}
+        <button
+          className="btn btn-success mb-3"
+          style={{ fontSize: "16px", padding: "6px 12px" }}
+        >
+          <strong>Count: {projects.length}</strong>
+        </button>
+
+        {/* Filter Section */}
         <div className="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-2">
-          {user?.role !== "cm" && (
-            <div className="d-flex gap-3 mt-4 flex-wrap align-items-center" style={{ display: "flex" }}>
-              {/* Region Multi-Select Dropdown */}
-              <div style={{ minWidth: 200 }}>
-                <Select
-                  isMulti
-                  options={regionOptions}
-                  value={selectedRegions}
-                  onChange={setSelectedRegions}
-                  placeholder="Select Region(s)"
-                  classNamePrefix="react-select"
-                />
-              </div>
+          <div className="d-flex gap-3 mt-4 flex-wrap align-items-center" style={{display:"flex"}}>
+            {/* Region Multi-Select */}
+            <div style={{ minWidth: 200 }}>
+              <Select
+                isMulti
+                options={regionOptions}
+                value={selectedRegions}
+                onChange={setSelectedRegions}
+                placeholder="Select Region(s)"
+                classNamePrefix="react-select"
+              />
+            </div>
 
-              {/* Date Range Button */}
-              <button className="btn btn-outline-secondary" onClick={handleDateRangeClick}>
-                Select Date Range
-              </button>
-
-              {/* Date Range Pickers */}
-              {showDateRange && (
-                <div className="d-flex gap-2 align-items-center">
-                  <DatePicker
-                    selected={startDate}
-                    onChange={(date) => setStartDate(date)}
-                    selectsStart
-                    startDate={startDate}
-                    endDate={endDate}
-                    placeholderText="Start Date"
-                    className="form-control"
-                  />
-                  <DatePicker
-                    selected={endDate}
-                    onChange={(date) => setEndDate(date)}
-                    selectsEnd
-                    startDate={startDate}
-                    endDate={endDate}
-                    minDate={startDate}
-                    placeholderText="End Date"
-                    className="form-control"
+            {user?.role !== "cm" && (
+              <>
+                {/* CM Names Dropdown */}
+                <div style={{ minWidth: 200 }}>
+                  <Select
+                    isClearable
+                    isMulti
+                    options={[
+                      { value: 'John Doe', label: 'John Doe' },
+                      { value: 'Jane Smith', label: 'Jane Smith' },
+                      { value: 'Rahul Kumar', label: 'Rahul Kumar' }
+                    ]}
+                    placeholder="Select CM"
+                    value={selectedCM}
+                    onChange={setSelectedCM}
                   />
                 </div>
-              )}
-            </div>
-          )}
 
-          <div className="d-flex gap-2 mb-5 mt-3" style={{ display: "flex", justifyContent: "flex-end" }}>
-            <button className="btn btn-primary">Download Report</button>
+                {/* Ticket IDs Dropdown */}
+                <div style={{ minWidth: 200 }}>
+                  <Select
+                    isClearable
+                    isMulti
+                    options={projects.map((proj) => ({ value: proj.id, label: proj.id }))}
+                    placeholder="Select Ticket ID"
+                    value={selectedTicketId}
+                    onChange={setSelectedTicketId}
+                  />
+                </div>
+              </>
+            )}
           </div>
+
+          {/* Date Range Filters */}
+          <div className="d-flex gap-4 py-3 px-2" style={{display:"flex"}}>
+            <div className="form-group pe-3">
+              <label htmlFor="fromDate" className="mb-1"><strong>From Date</strong></label>
+              <input
+                type="date"
+                id="fromDate"
+                className="form-control p-2"
+                value={startDate ? startDate.toISOString().split('T')[0] : ''}
+                onChange={(e) => setStartDate(new Date(e.target.value))}
+              />
+            </div>
+            <div className="form-group pe-3">
+              <label htmlFor="toDate" className="mb-1"><strong>To Date</strong></label>
+              <input
+                type="date"
+                id="toDate"
+                className="form-control p-2"
+                min={startDate ? startDate.toISOString().split('T')[0] : ''}
+                value={endDate ? endDate.toISOString().split('T')[0] : ''}
+                onChange={(e) => setEndDate(new Date(e.target.value))}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Download Button */}
+        <div className="d-flex gap-2 mb-5 mt-3" style={{ display:"flex",justifyContent: "flex-end" }}>
+<button
+  className="d-flex align-items-center gap-2"
+  style={{
+    background: 'linear-gradient(90deg, #6366F1, #8B5CF6)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    padding: '8px 16px',
+    display:"flex"
+  }}
+>
+  <Download size={16} />
+  Download Report
+</button>
+
+
         </div>
 
         <ReusableTable columns={columns} data={projects} />

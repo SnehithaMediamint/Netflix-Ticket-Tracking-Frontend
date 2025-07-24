@@ -35,6 +35,7 @@ import { selectCurrentUser,selectCurrentToken, selectAuthStatus } from "../../st
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { resetUser } from '../../store/userProfile/UserProfileSlice';
+import { LogOut, LogOutIcon} from 'lucide-react';
 
 const Header = () => {
     const location = useLocation();
@@ -44,10 +45,38 @@ const Header = () => {
         const user2 = JSON.parse(localStorage.getItem("user"));
 console.log(user2?.name);
       const userProfileIcon = userDetails?.picture
-    
+      const handleClick = () => {
+Swal.fire({
+//   title: '<strong>Ready to Leave?</strong>',
+  text: 'Are you sure you want to logout from your session?',
+  icon: 'warning',
+  showCancelButton: true,
+  confirmButtonColor: '#3085d6',
+  cancelButtonColor: '#d33',
+  confirmButtonText: 'Yes, logout!'
+})
+.then((result) => {
+          if (result.isConfirmed) {
+            // Clear Redux state
+          navigate("/login")
+      
+            // Show success message
+            Swal.fire({
+              title: 'Logged out!',
+              text: 'You have been logged out successfully',
+              icon: 'success',
+              confirmButtonColor: '#3085d6',
+              timer:1000
+            }).then(() => {
+              // Redirect to login after success message is closed
+              navigate('/login');
+            });
+          }
+        });
+      };  
       const handleLogout = () => {
       Swal.fire({
-  title: '<strong>Oops!</strong>',
+  title: '<strong>Signing Off?</strong>',
   text: 'Are you sure you want to logout from your session?',
   icon: 'warning',
   showCancelButton: true,
@@ -221,7 +250,7 @@ console.log(user2?.name);
                                     </button>
                                 </div> */}
                             </form>
-                                                        <span className="text-xl ltr:ml-1.5 rtl:mr-1.5  font-semibold  align-middle hidden md:inline dark:text-white-light transition-all duration-300">Hello {user2?.name} !</span>
+                                                        <span className="text-xl ltr:ml-1.5 rtl:mr-1.5  font-semibold  align-middle hidden md:inline dark:text-white-light transition-all duration-300">Hello {user2?.name} ! - ({user2?.role})</span>
                             <button
                                 type="button"
                                 onClick={() => setSearch(!search)}
@@ -230,7 +259,22 @@ console.log(user2?.name);
                                 <IconSearch className="w-4.5 h-4.5 mx-auto dark:text-[#d0d2d6]" />
                             </button>
                         </div>
-                        <div>
+                     <div
+  onClick={handleClick}
+  style={{
+    backgroundColor: '#f0f0f0', // or any color you prefer
+    borderRadius: '50%',
+    padding: '10px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+  }}
+>
+<LogOutIcon/>
+</div>
+
+                        {/* <div>
                             {themeConfig.theme === 'light' ? (
                                 <button
                                     className={`${
@@ -272,7 +316,7 @@ console.log(user2?.name);
                                     <IconLaptop />
                                 </button>
                             )}
-                        </div>
+                        </div> */}
                         {/* <div className="dropdown shrink-0">
                             <Dropdown
                                 offset={[0, 8]}
