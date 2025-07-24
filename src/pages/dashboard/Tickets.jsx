@@ -5,6 +5,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import "../../style/Style.css";
 import { Card } from 'react-bootstrap';
 import { Download } from 'lucide-react';
+
 const Tickets = () => {
   const [showDateRange, setShowDateRange] = useState(false);
   const [startDate, setStartDate] = useState(null);
@@ -89,9 +90,9 @@ const Tickets = () => {
         const [h, m, s] = timeStr.split(':').map(Number);
         const totalSeconds = h * 3600 + m * 60 + s;
 
-        let badgeClass = 'bg-success'; // green
-        if (totalSeconds <= 1800 && totalSeconds > 600) badgeClass = 'bg-warning text-dark'; // orange
-        if (totalSeconds <= 600) badgeClass = 'bg-danger'; // red
+        let badgeClass = 'bg-success';
+        if (totalSeconds <= 1800 && totalSeconds > 600) badgeClass = 'bg-warning text-dark';
+        if (totalSeconds <= 600) badgeClass = 'bg-danger';
 
         return (
           <span className={`badge ${badgeClass}`} style={{ fontSize: '0.9rem' }}>
@@ -121,9 +122,7 @@ const Tickets = () => {
         if (totalSeconds <= 1800 && totalSeconds > 600) color = 'orange';
         if (totalSeconds <= 600) color = 'red';
 
-        return (
-          <span style={{ color, fontWeight: 'bold' }}>{timeStr}</span>
-        );
+        return <span style={{ color, fontWeight: 'bold' }}>{timeStr}</span>;
       }
     },
     ...(user?.role !== 'cm' ? [{ label: 'Name of CM', key: 'qm' }] : []),
@@ -134,7 +133,43 @@ const Tickets = () => {
     {
       label: 'Region',
       key: 'region'
-    }
+    },
+    ...(user?.role === 'cm'
+      ? [
+          {
+            label: 'Status',
+            key: 'status',
+            render: () => (
+              <Select
+                options={[
+                  { value: 'Interim', label: 'Interim' },
+                  { value: 'Solution Provided', label: 'Solution Provided' }
+                ]}
+                classNamePrefix="react-select"
+                placeholder="Select Status"
+                isClearable
+                styles={{
+                  container: (base) => ({
+                    ...base,
+                    minWidth: 180
+                  }),
+                  menu: (provided) => ({ ...provided, zIndex: 9999 })
+                }}
+              />
+            )
+          },
+          {
+            label: 'Actions',
+            key: 'actions',
+            render: () => (
+              <div className="d-flex gap-2" style={{display:"flex"}}>
+                <button className="btn btn-sm btn-success">Start</button>
+                <button className="btn btn-sm btn-danger">End</button>
+              </div>
+            )
+          }
+        ]
+      : [])
   ];
 
   return (
@@ -153,8 +188,7 @@ const Tickets = () => {
 
         {/* Filter Section */}
         <div className="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-2">
-          <div className="d-flex gap-3 mt-4 flex-wrap align-items-center" style={{display:"flex"}}>
-            {/* Region Multi-Select */}
+          <div className="d-flex gap-3 mt-4 flex-wrap align-items-center" style={{ display: "flex" }}>
             <div style={{ minWidth: 200 }}>
               <Select
                 isMulti
@@ -168,7 +202,6 @@ const Tickets = () => {
 
             {user?.role !== "cm" && (
               <>
-                {/* CM Names Dropdown */}
                 <div style={{ minWidth: 200 }}>
                   <Select
                     isClearable
@@ -184,7 +217,6 @@ const Tickets = () => {
                   />
                 </div>
 
-                {/* Ticket IDs Dropdown */}
                 <div style={{ minWidth: 200 }}>
                   <Select
                     isClearable
@@ -200,7 +232,7 @@ const Tickets = () => {
           </div>
 
           {/* Date Range Filters */}
-          <div className="d-flex gap-4 py-3 px-2" style={{display:"flex"}}>
+          <div className="d-flex gap-4 py-3 px-2" style={{ display: "flex" }}>
             <div className="form-group pe-3">
               <label htmlFor="fromDate" className="mb-1"><strong>From Date</strong></label>
               <input
@@ -208,6 +240,7 @@ const Tickets = () => {
                 id="fromDate"
                 className="form-control p-2"
                 value={startDate ? startDate.toISOString().split('T')[0] : ''}
+                max={new Date().toISOString().split('T')[0]}
                 onChange={(e) => setStartDate(new Date(e.target.value))}
               />
             </div>
@@ -218,6 +251,7 @@ const Tickets = () => {
                 id="toDate"
                 className="form-control p-2"
                 min={startDate ? startDate.toISOString().split('T')[0] : ''}
+                max={new Date().toISOString().split('T')[0]}
                 value={endDate ? endDate.toISOString().split('T')[0] : ''}
                 onChange={(e) => setEndDate(new Date(e.target.value))}
               />
@@ -226,23 +260,21 @@ const Tickets = () => {
         </div>
 
         {/* Download Button */}
-        <div className="d-flex gap-2 mb-5 mt-3" style={{ display:"flex",justifyContent: "flex-end" }}>
-<button
-  className="d-flex align-items-center gap-2"
-  style={{
-    background: 'linear-gradient(90deg, #6366F1, #8B5CF6)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    padding: '8px 16px',
-    display:"flex"
-  }}
->
-  <Download size={16} />
-  Download Report
-</button>
-
-
+        <div className="d-flex gap-2 mb-5 mt-3" style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button
+            className="d-flex align-items-center gap-2"
+            style={{
+              background: 'linear-gradient(90deg, #6366F1, #8B5CF6)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '8px 16px',
+              display: "flex"
+            }}
+          >
+            <Download size={16} />
+            Download Report
+          </button>
         </div>
 
         <ReusableTable columns={columns} data={projects} />
