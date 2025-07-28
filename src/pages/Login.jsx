@@ -26,8 +26,6 @@ const Login = () => {
     navigate("/tickets");
   };
 
-
-
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-12 font-sans">
       {/* Left Side (col-4) */}

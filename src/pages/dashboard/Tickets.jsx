@@ -175,16 +175,19 @@ const Tickets = () => {
   return (
     <div className="p-4">
       <Card>
-        <h1 className="mb-3 fs-1" style={{ fontSize: "16px" }}>
-          <strong>{user?.role === "qm" ? "Tickets List" : "Tickets List"}</strong>
-        </h1>
+  <div className="d-flex justify-content-between align-items-center mb-3" style={{display:"flex",justifyContent:"space-between"}}>
+  <h1 className="fs-1 mb-0" style={{ fontSize: "16px" }}>
+    <strong>Tickets List</strong>
+  </h1>
 
-        <button
-          className="btn btn-success mb-3"
-          style={{ fontSize: "16px", padding: "6px 12px" }}
-        >
-          <strong>Count: {projects.length}</strong>
-        </button>
+  <button
+    className="btn btn-success"
+    style={{ fontSize: "16px", padding: "6px 12px" }}
+  >
+    <strong>Count: {projects.length}</strong>
+  </button>
+</div>
+
 
         {/* Filter Section */}
         <div className="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-2">
