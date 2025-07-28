@@ -221,7 +221,7 @@ console.log(user2?.name);
                                     </button>
                                 </div> */}
                             </form>
-                                                        <span className="text-xl ltr:ml-1.5 rtl:mr-1.5  font-semibold  align-middle hidden md:inline dark:text-white-light transition-all duration-300">Hello {user2?.name} !</span>
+                                                        <span className="text-xl ltr:ml-1.5 rtl:mr-1.5  font-semibold  align-middle hidden md:inline dark:text-white-light transition-all duration-300">Hello {user?.name} !</span>
                             <button
                                 type="button"
                                 onClick={() => setSearch(!search)}

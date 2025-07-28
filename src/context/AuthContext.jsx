@@ -1,31 +1,54 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useState, useEffect, useContext } from 'react';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // ✅ loading state
+  // Initialize state from localStorage
+  const [user, setUser] = useState(() => {
+    const storedToken = localStorage.getItem('token');
+    const storedRole = localStorage.getItem('role');
+    const storedName = localStorage.getItem('name');
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    if (storedToken && storedRole && storedName) {
+      try {
+        return {
+          token: storedToken,
+          role: parseInt(storedRole), // Ensure role is parsed
+          name: storedName,
+        };
+      } catch (e) {
+        console.error("Failed to parse stored user data:", e);
+        return null; // Clear if parsing fails
+      }
     }
-    setLoading(false); // ✅ mark loading complete
-  }, []);
+    return null;
+  });
+
+  // Update localStorage when user state changes (optional, can be done in login/logout)
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('token', user.token);
+      localStorage.setItem('role', user.role.toString());
+      localStorage.setItem('name', user.name);
+    } else {
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      localStorage.removeItem('name');
+    }
+  }, [user]);
 
   const login = (userData) => {
-    localStorage.setItem("user", JSON.stringify(userData));
     setUser(userData);
+    // localStorage updates are handled by useEffect or can be explicit here as well
   };
 
   const logout = () => {
-    localStorage.removeItem("user");
     setUser(null);
+    // localStorage removals are handled by useEffect or can be explicit here as well
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

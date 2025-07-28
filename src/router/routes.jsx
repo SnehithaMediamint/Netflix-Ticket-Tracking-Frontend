@@ -1,57 +1,28 @@
 import { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
+import GoogleCallback from '../components/GoogleCallback';
 
-// const Dashboard = lazy(() => import('../pages/dashboard/Dashboard'));
 const Tickets = lazy(() => import('../pages/dashboard/Tickets'));
 const Login = lazy(() => import('../pages/Login'));
-const Unauthorized = lazy(() => import('../pages/Unauthorized')); // Add this page
+const Unauthorized = lazy(() => import('../pages/Unauthorized'));
 
 const routes = [
-  // Public routes
+  { path: '/login', element: <Login />, layout: 'blank' },
   {
-    path: '/login',
-    element: <Login />,
-    layout: 'blank',
+    path: '/google/callback', // This is the route your backend redirects to
+    element: <GoogleCallback />, // Render the GoogleCallback component here
   },
-  {
-    path: '/unauthorized',
-    element: <Unauthorized />,
-    layout: 'blank',
-  },
-
-  // Default redirect
+  { path: '/unauthorized', element: <Unauthorized />, layout: 'blank' },
   {
     path: '/',
-    element: <Navigate to="/tickets" replace />,
-    layout: 'default',
-  },
-  
-
-  // Protected routes
-  {
-    path: '/',
-   element: <ProtectedRoute allowedRoles={['qm', 'cm']} />,
-// ✅ role check
+    element: <ProtectedRoute allowedRoles={[0, 1]} />, // 0 = QM, 1 = CM
     layout: 'default',
     children: [
-      {
-        path: 'tickets',
-        element: <Tickets />,
-      },
-      // {
-      //   path: 'dashboard',
-      //   element: <Dashboard />,
-      // },
+      { path: 'tickets', element: <Tickets /> },
     ],
   },
-
-  // Catch-all: redirect unknown routes
-  {
-    path: '*',
-    element: <Navigate to="/tickets" replace />,
-    layout: 'default',
-  },
+  { path: '*', element: <Navigate to="/login" replace />, layout: 'blank' },
 ];
 
 export { routes };

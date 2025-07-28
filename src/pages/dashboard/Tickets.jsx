@@ -118,7 +118,8 @@ const Tickets = () => {
         );
       }
     },
-    ...(user?.role !== 'cm' ? [{ label: 'Name of CM', key: 'qm' }] : []),
+    ...(user?.role !== 1 ? [{ label: 'Name of CM', key: 'qm' }] : []),
+
     { label: 'Name of AM', key: 'agent' }
   ];
 
@@ -130,7 +131,7 @@ const Tickets = () => {
 
         {/* Filter Buttons */}
         <div className="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-2">
-          {user?.role !== "cm" && (
+        {user?.role !== 1 && (
             <div className="d-flex gap-3 mt-4 flex-wrap align-items-center" style={{ display: "flex" }}>
               {/* Region Multi-Select Dropdown */}
               <div style={{ minWidth: 200 }}>

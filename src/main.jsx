@@ -19,23 +19,31 @@ import { Provider } from 'react-redux';
 import { store } from './store';
 
 // Auth
-import { AuthProvider } from './context/AuthContext'; // 👈 import your AuthProvider here
+import { AuthProvider } from './context/AuthContext';
+
+// Google OAuth
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 // 🚀 Set demo user in localStorage if not already set
-const existingUser = localStorage.getItem("user");
-if (!existingUser) {
-  const demoUser = { name: "Demo User", role: "cm" }; // default user role
-  localStorage.setItem("user", JSON.stringify(demoUser));
-}
+// const existingUser = localStorage.getItem("user");
+// if (!existingUser) {
+//   const demoUser = { name: "Demo User", role: "cm" }; // default user role
+//   localStorage.setItem("user", JSON.stringify(demoUser));
+// }
+
+// ✅ Replace with your actual Google client ID from Google Developer Console
+const GOOGLE_CLIENT_ID = '940013775027-c19f9mtvsjtnn74199qu2n6fflju7v36.apps.googleusercontent.com';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <Suspense>
-      <Provider store={store}>
-        <AuthProvider> {/* 👈 wrap here */}
-          <RouterProvider router={router} />
-        </AuthProvider>
-      </Provider>
-    </Suspense>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <Suspense>
+        <Provider store={store}>
+          <AuthProvider>
+            <RouterProvider router={router} />
+          </AuthProvider>
+        </Provider>
+      </Suspense>
+    </GoogleOAuthProvider>
   </React.StrictMode>
 );

@@ -1,19 +1,16 @@
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import React from 'react';
+import { Navigate, Outlet } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
-const ProtectedRoute = ({ allowedRoles }) => {
-  const token = localStorage.getItem('authToken');
-  const { user, loading } = useAuth();
+const ProtectedRoute = ({ allowedRoles = []  }) => {
+  const { user} = useAuth();
 
-  // ⏳ Wait for user data to load on refresh
-  if (loading) return <div>Loading...</div>; // You can replace this with a spinner
-
-  if (!token || !user) {
-    return <Navigate to="/login" replace />;
+  if (!user) {
+    return <Navigate to="/login" replace />; // Not logged in, redirect to login
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/unauthorized" replace />;
+  if (!user || !allowedRoles.includes(user.role)) {
+    return <Navigate to="/unauthorized" />;
   }
 
   return <Outlet />;
