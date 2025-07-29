@@ -30,7 +30,8 @@ const Tickets = () => {
       endTimestamp: Date.now() + 2 * 60 * 60 * 1000,
       agent: 'Alice',
       qm: 'John Doe',
-      region: 'EMEA'
+      region: 'EMEA',
+      status: 'Assigned'
     },
     {
       id: 'TKT002',
@@ -38,7 +39,8 @@ const Tickets = () => {
       endTimestamp: Date.now() + 25 * 60 * 1000,
       agent: 'Alice',
       qm: 'John Doe',
-      region: 'EMEA'
+      region: 'EMEA',
+      status: 'Closed'
     },
     {
       id: 'TKT005',
@@ -46,7 +48,8 @@ const Tickets = () => {
       endTimestamp: Date.now() + 9 * 60 * 1000,
       agent: 'Alice',
       qm: 'John Doe',
-      region: 'EMEA'
+      region: 'EMEA',
+      status: 'Assigned'
     }
   ]);
 
@@ -75,6 +78,10 @@ const Tickets = () => {
 
     return () => clearInterval(interval);
   }, [projects]);
+
+  const totalCount = projects.length;
+  const assignedCount = projects.filter(p => p.status === 'Assigned').length;
+  const closedCount = projects.filter(p => p.status === 'Closed').length;
 
   const columns = [
     {
@@ -134,9 +141,7 @@ const Tickets = () => {
       label: 'Region',
       key: 'region'
     },
-    ...(user?.role === 'cm'
-      ? [
-          {
+      {
             label: 'Status',
             key: 'status',
             render: () => (
@@ -158,11 +163,14 @@ const Tickets = () => {
               />
             )
           },
+    ...(user?.role === 'cm'
+      ? [
+        
           {
             label: 'Actions',
             key: 'actions',
             render: () => (
-              <div className="d-flex gap-2" style={{display:"flex"}}>
+              <div className="d-flex gap-2" style={{ display: "flex" }}>
                 <button className="btn btn-sm btn-success">Start</button>
                 <button className="btn btn-sm btn-danger">End</button>
               </div>
@@ -175,23 +183,34 @@ const Tickets = () => {
   return (
     <div className="p-4">
       <Card>
-  <div className="d-flex justify-content-between align-items-center mb-3" style={{display:"flex",justifyContent:"space-between"}}>
-  <h1 className="fs-1 mb-0" style={{ fontSize: "16px" }}>
-    <strong>Tickets List</strong>
-  </h1>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h1 className="fs-1 mb-0" style={{ fontSize: "16px" }}>
+            <strong>Tickets List</strong>
+          </h1>
+          {/* <button className="btn btn-success" style={{ fontSize: "16px", padding: "6px 12px" }}>
+            <strong>Count: {projects.length}</strong>
+          </button> */}
+        </div>
 
-  <button
-    className="btn btn-success"
-    style={{ fontSize: "16px", padding: "6px 12px" }}
-  >
-    <strong>Count: {projects.length}</strong>
-  </button>
-</div>
-
+        {/* Count Cards */}
+        <div className="d-flex flex-wrap gap-3 mb-4" style={{display:"flex"}}>
+          <div className="card text-white bg-primary p-3" style={{ minWidth: 180,display:"flex" }}>
+            <h6>Total Tickets :</h6>
+            <h4 style={{fontWeight:"bold",fontSize:"1.2rem"}}> {totalCount}</h4>
+          </div>
+          <div className="card text-white bg-success p-3" style={{ minWidth: 180,display:"flex" }}>
+            <h6>Assigned Tickets :</h6>
+            <h4 style={{fontWeight:"bold",fontSize:"1.2rem"}}> 3</h4>
+          </div>
+          <div className="card text-white bg-danger p-3" style={{ minWidth: 180,display:"flex" }}>
+          <h6>Closed Tickets :</h6>
+            <h4 style={{fontWeight:"bold",fontSize:"1.2rem"}}> 0</h4>
+          </div>
+        </div>
 
         {/* Filter Section */}
         <div className="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-2">
-          <div className="d-flex gap-3 mt-4 flex-wrap align-items-center" style={{ display: "flex" }}>
+          <div className="d-flex gap-3 mt-4 flex-wrap align-items-center" style={{display:"flex"}}>
             <div style={{ minWidth: 200 }}>
               <Select
                 isMulti
@@ -230,40 +249,42 @@ const Tickets = () => {
                     onChange={setSelectedTicketId}
                   />
                 </div>
-              </>
-            )}
-          </div>
-
-          {/* Date Range Filters */}
-          <div className="d-flex gap-4 py-3 px-2" style={{ display: "flex" }}>
-            <div className="form-group pe-3">
-              <label htmlFor="fromDate" className="mb-1"><strong>From Date</strong></label>
+                  <div className="form-group pe-3 flex">
+              <label htmlFor="fromDate" className="mb-1 " style={{display:"flex",alignItems:"center"}}><strong>From Date : </strong></label>
               <input
                 type="date"
                 id="fromDate"
-                className="form-control p-2"
+                className="form-control p-2 ms-1"
                 value={startDate ? startDate.toISOString().split('T')[0] : ''}
                 max={new Date().toISOString().split('T')[0]}
                 onChange={(e) => setStartDate(new Date(e.target.value))}
+                
               />
             </div>
-            <div className="form-group pe-3">
-              <label htmlFor="toDate" className="mb-1"><strong>To Date</strong></label>
+            <div className="form-group pe-3 flex">
+              <label htmlFor="toDate" className="mb-1" style={{display:"flex",alignItems:"center"}}><strong>To Date : </strong></label>
               <input
                 type="date"
                 id="toDate"
-                className="form-control p-2"
+                className="form-control p-2 ms-1"
                 min={startDate ? startDate.toISOString().split('T')[0] : ''}
                 max={new Date().toISOString().split('T')[0]}
                 value={endDate ? endDate.toISOString().split('T')[0] : ''}
                 onChange={(e) => setEndDate(new Date(e.target.value))}
               />
             </div>
+              </>
+            )}
+          </div>
+
+          {/* Date Range Filters */}
+          <div className="flex gap-4 py-3 px-2">
+          
           </div>
         </div>
 
         {/* Download Button */}
-        <div className="d-flex gap-2 mb-5 mt-3" style={{ display: "flex", justifyContent: "flex-end" }}>
+        <div className="d-flex gap-2 mb-5 mt-3" style={{ justifyContent: "flex-end",display:"flex" }}>
           <button
             className="d-flex align-items-center gap-2"
             style={{
@@ -272,7 +293,7 @@ const Tickets = () => {
               border: 'none',
               borderRadius: '6px',
               padding: '8px 16px',
-              display: "flex"
+              display:"flex"
             }}
           >
             <Download size={16} />

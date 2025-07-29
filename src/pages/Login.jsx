@@ -20,7 +20,7 @@ const Login = () => {
 
     // Set token and user info
     localStorage.setItem("authToken", "dummy_token"); // 👈 token for ProtectedRoute check
-    login(role2); // 👈 sets user context + localStorage
+    login(role1); // 👈 sets user context + localStorage
 
 
     navigate("/tickets");
