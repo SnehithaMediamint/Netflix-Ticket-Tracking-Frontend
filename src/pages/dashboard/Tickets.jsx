@@ -148,7 +148,9 @@ const Tickets = () => {
               <Select
                 options={[
                   { value: 'Interim', label: 'Interim' },
-                  { value: 'Solution Provided', label: 'Solution Provided' }
+                  { value: 'Solution Provided', label: 'Solution Provided' },
+                  { value: 'Need More Information', label: 'Need More Information' },
+                  { value: 'Close', label: 'Close' }
                 ]}
                 classNamePrefix="react-select"
                 placeholder="Select Status"
