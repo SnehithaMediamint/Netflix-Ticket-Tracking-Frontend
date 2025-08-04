@@ -20,13 +20,11 @@ const Login = () => {
 
     // Set token and user info
     localStorage.setItem("authToken", "dummy_token"); // 👈 token for ProtectedRoute check
-    login(role2); // 👈 sets user context + localStorage
+    login(role1); // 👈 sets user context + localStorage
 
-    // Navigate to protected route
+
     navigate("/tickets");
   };
-
-
 
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-12 font-sans">
