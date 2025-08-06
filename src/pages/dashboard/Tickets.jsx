@@ -73,11 +73,11 @@ const [selectedTicketId, setSelectedTicketId] = useState([]); // was null
 
       try {
         const res = await fetch(
-          `http://localhost:5000/api/getNetflixTickets?email=djavvaji@netflixcontractors.com&role=0&page=${page}&limit=25&cmRegionList=${cmRegionList}&cmNameList=${cmNameList}&ticketKeyList=${ticketKeyList}&createdFrom=${createdFrom}&createdTo=${createdTo}`
+          `http://localhost:5000/api/getNetflixTickets?email=saiteja.kunapureddy@mediamint.com&role=0&page=${page}&limit=25&cmRegionList=${cmRegionList}&cmNameList=${cmNameList}&ticketKeyList=${ticketKeyList}&createdFrom=${createdFrom}&createdTo=${createdTo}`
         );
         const json = await res.json();
         if (json.success) {
-            setProjects(json.data);
+            setProjects(json.data);s
             setTotalPages(json.totalPages);
             
             // Set the global metrics ONLY if it's the first page and no other filters are active.

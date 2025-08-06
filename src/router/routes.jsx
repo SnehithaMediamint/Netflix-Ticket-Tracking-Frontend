@@ -5,7 +5,7 @@ import ProtectedRoute from './ProtectedRoute';
 // const Dashboard = lazy(() => import('../pages/dashboard/Dashboard'));
 const Tickets = lazy(() => import('../pages/dashboard/Tickets'));
 const Login = lazy(() => import('../pages/Login'));
-const Unauthorized = lazy(() => import('../pages/Unauthorized')); // Add this page
+ // Add this page
 
 const routes = [
   // Public routes
@@ -14,12 +14,7 @@ const routes = [
     element: <Login />,
     layout: 'blank',
   },
-  {
-    path: '/unauthorized',
-    element: <Unauthorized />,
-    layout: 'blank',
-  },
-
+ 
   // Default redirect
   {
     path: '/',
