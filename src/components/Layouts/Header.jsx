@@ -36,7 +36,10 @@ import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { resetUser } from '../../store/userProfile/UserProfileSlice';
 import { LogOut, LogOutIcon} from 'lucide-react';
-
+const ROLE_LABELS = {
+  0: "QM",
+  1: "CM",
+};
 const Header = () => {
     const location = useLocation();
       const user = useSelector(selectCurrentUser);
@@ -250,11 +253,14 @@ Swal.fire({
                                     </button>
                                 </div> */}
                             </form>
-<span className="text-xl ltr:ml-1.5 rtl:mr-1.5 font-semibold align-middle hidden md:inline dark:text-white-light transition-all duration-300">
-  {user2?.role === 'qm' && `Hello ${user2?.name} - (QM)`}
-  {user2?.role === 'cm' && `Hello ${user2?.name} - (CM)`}
 
+
+<span className="text-xl ltr:ml-1.5 rtl:mr-1.5 font-semibold align-middle hidden md:inline dark:text-white-light transition-all duration-300">
+  {user2?.name && (typeof user2.role !== "undefined") && (
+    <>Hello {user2.name} - ({ROLE_LABELS[user2.role] || "Unknown"})</>
+  )}
 </span>
+
 
                             <button
                                 type="button"
