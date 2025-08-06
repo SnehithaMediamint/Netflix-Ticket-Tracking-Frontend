@@ -28,6 +28,8 @@ const Login = () => {
             STORAGE.setItem("authToken", data.token);
             STORAGE.setItem("user", JSON.stringify(data.user));
             STORAGE.setItem("role", data.user.role);
+             STORAGE.setItem("email", data.user.email);
+
 
             // Save to context if needed
             login({

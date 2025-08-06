@@ -10,7 +10,15 @@ const Tickets = () => {
   const [showDateRange, setShowDateRange] = useState(false);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
+    const [assignedCount, setAssignedCount] = useState(0);
+const [closedCount, setClosedCount] = useState(0);
+const [totalCount, setTotalCount] = useState(0);
   const user = JSON.parse(localStorage.getItem("user"));
+  const email=localStorage.getItem("email")
+  const [paginationGroup, setPaginationGroup] = useState(0); // 0 = pages 1-5, 1 = pages 6-10, etc.
+const pagesPerGroup = 5;
+
+
 
 
   const [globalMetrics, setGlobalMetrics] = useState({
@@ -50,6 +58,7 @@ const Tickets = () => {
     { value: 'LATAM', label: 'LATAM' }
   ];
 
+
   const [selectedRegions, setSelectedRegions] = useState([]);
   const [selectedCM, setSelectedCM] = useState([]); // was null
 const [selectedTicketId, setSelectedTicketId] = useState([]); // was null
@@ -60,11 +69,28 @@ const [selectedTicketId, setSelectedTicketId] = useState([]); // was null
   const [totalPages, setTotalPages] = useState(1);
 
 
+const getPageNumbers = () => {
+  const startPage = paginationGroup * pagesPerGroup + 1;
+  const endPage = Math.min(startPage + pagesPerGroup - 1, totalPages);
 
+  const pages = [];
+  for (let i = startPage; i <= endPage; i++) {
+    pages.push(i);
+  }
+  return pages;
+};
+useEffect(() => {
+  setPaginationGroup(0);
+}, [selectedRegions, selectedCM, selectedTicketId, startDate, endDate]);
 
   
   useEffect(() => {
-    const fetchTickets = async () => {
+ 
+
+    fetchTickets();
+  }, [selectedRegions, selectedCM, selectedTicketId, startDate, endDate, page,assignedCount,totalCount,closedCount]); // This hook reacts to all changes
+
+   const fetchTickets = async () => {
       const cmRegionList = selectedRegions.map((r) => r.value).join(',');
       const cmNameList = selectedCM.map((c) => c.value).join(',');
       const ticketKeyList = selectedTicketId.map((t) => t.value).join(',');
@@ -73,11 +99,11 @@ const [selectedTicketId, setSelectedTicketId] = useState([]); // was null
 
       try {
         const res = await fetch(
-          `http://localhost:5000/api/getNetflixTickets?email=saiteja.kunapureddy@mediamint.com&role=0&page=${page}&limit=25&cmRegionList=${cmRegionList}&cmNameList=${cmNameList}&ticketKeyList=${ticketKeyList}&createdFrom=${createdFrom}&createdTo=${createdTo}`
+          `http://localhost:5000/api/getNetflixTickets?email=${email}&page=${page}&limit=25&cmRegionList=${cmRegionList}&cmNameList=${cmNameList}&ticketKeyList=${ticketKeyList}&createdFrom=${createdFrom}&createdTo=${createdTo}`
         );
         const json = await res.json();
         if (json.success) {
-            setProjects(json.data);s
+            setProjects(json.data);
             setTotalPages(json.totalPages);
             
             // Set the global metrics ONLY if it's the first page and no other filters are active.
@@ -90,129 +116,6 @@ const [selectedTicketId, setSelectedTicketId] = useState([]); // was null
         console.error('Error fetching data:', err);
       }
     };
-
-    fetchTickets();
-  }, [selectedRegions, selectedCM, selectedTicketId, startDate, endDate, page]); // This hook reacts to all changes
-
-
-
-
-
-
-// useEffect(() => {
-//     const fetchTickets = async () => {
-//       try {
-//         const params = new URLSearchParams({
-//           role: user.role,
-//           email: user.emailId,
-//           page,
-//           limit: 25
-//         });
-
-//         const cmRegionList = selectedRegions.map((r) => r.value).join(',');
-//         const cmNameList = selectedCM.map((c) => c.value).join(',');
-//         const ticketKeyList = selectedTicketId.map((t) => t.value).join(',');
-//         const createdFrom = startDate ? startDate.toISOString() : '';
-//         const createdTo = endDate ? endDate.toISOString() : '';
-
-//         // if (selectedRegions.length) {
-//         //   params.append('cmRegionList', selectedRegions.map(r => r.value).join(','));
-//         // }
-//         // if (selectedCM?.length) {
-//         //   params.append('cmNameList', selectedCM.map(c => c.value).join(','));
-//         // }
-//         // if (selectedTicketId?.length) {
-//         //   params.append('ticketIDList', selectedTicketId.map(t => t.value).join(','));
-//         // }
-//         // if (startDate && endDate) {
-//         //   params.append('createdFrom', startDate.toISOString());
-//         //   params.append('createdTo', endDate.toISOString());
-//         // }
-//         // any other filters similarly
-//         // const response = await fetch(`http://localhost:5000/api/getNetflixTickets/?page=${page}&email=djavvaji@netflixcontractors.com`);
-//         // const response = await fetch(`http://localhost:5000/api/getNetflixTickets/?role=0&email=apanneerselvam@netflixcontractors.com&page=${page}`);
-//         // const response = await fetch(`http://localhost:5000/api/getNetflixTickets/?role=0&email=apanneerselvam@netflixcontractors.com&page=1`);
-
-//         const response = await fetch(
-//           `http://localhost:5000/api/getNetflixTickets?email=djavvaji@netflixcontractors.com&role=1&page=${page}&limit=25&cmRegionList=${cmRegionList}&cmNameList=${cmNameList}&ticketKeyList=${ticketKeyList}&createdFrom=${createdFrom}&createdTo=${createdTo}`
-//         );
-//         const { success, data, totalPages: tp, metrics: fetchedMetrics } = await response.json();
-
-//         if (success) {
-//           setProjects(data);
-//           setTotalPages(tp);
-//           setMetrics(fetchedMetrics || { totalTickets: 0, assignedTickets: 0, closedTickets: 0 });
-
-//         }
-//       } catch (err) {
-//         console.error("Error fetching tickets:", err);
-//       }
-//     };
-//     fetchTickets();
-//   }, [page,selectedRegions, selectedCM, selectedTicketId, startDate, endDate]);
-  // page, selectedRegions, selectedCM, selectedTicketId, startDate, endDate, user
-
-  // useEffect(() => {
-  //   const cmRegionList = selectedRegions.map((r) => r.value).join(',');
-  //   const cmNameList = selectedCM.map((c) => c.value).join(',');
-  //   const ticketKeys = selectedTicketId.map((t) => t.value).join(',');
-  //   const createdFrom = startDate ? startDate.toISOString() : '';
-  //   const createdTo = endDate ? endDate.toISOString() : '';
-    
-  
-  //   const fetchTickets = async () => {
-  //     try {
-  //       const res = await fetch(
-  //         `http://localhost:5000/api/getNetflixTickets?email=djavvaji@netflixcontractors.com&role=1&page=${page}&limit=25&cmRegionList=${cmRegionList}&cmNameList=${cmNameList}&ticketKeys=${ticketKeys}&createdFrom=${createdFrom}&createdTo=${createdTo}`
-  //       );
-  //       const json = await res.json();
-  //       if (json.success) {
-  //         setProjects(json.data);
-  //         setTotalPages(json.totalPages);
-  //         setMetrics(json.metrics || {});
-  //       } else {
-  //         console.error('API error:', json.error);
-  //       }
-  //     } catch (err) {
-  //       console.error('Fetch error:', err);
-  //     }
-  //   };
-  
-  //   fetchTickets();
-  // }, [selectedRegions, selectedCM, selectedTicketId, startDate, endDate, page]);
-  
-//   useEffect(() => {
-//     // This function will run whenever any filter or the page number changes.
-//     const fetchFilteredTickets = async () => {
-//       try {
-//         // 1. Build the query parameters from your state
-//         const cmRegionList = selectedRegions.map((r) => r.value).join(',');
-//         const cmNameList = selectedCM.map((c) => c.value).join(',');
-//         const ticketKeyList = selectedTicketId.map((t) => t.value).join(',');
-//         const createdFrom = startDate ? startDate.toISOString() : '';
-//         const createdTo = endDate ? endDate.toISOString() : '';
-
-//         // 2. Make a single API call with all the current filters and page number
-//         const res = await fetch(
-//           `http://localhost:5000/api/getNetflixTickets?email=djavvaji@netflixcontractors.com&role=1&page=${page}&limit=25&cmRegionList=${cmRegionList}&cmNameList=${cmNameList}&ticketKeyList=${ticketKeyList}&createdFrom=${createdFrom}&createdTo=${createdTo}`
-//         );
-//         const json = await res.json();
-        
-//         // 3. Update your UI state with the results from the API
-//         if (json.success) {
-//           setProjects(json.data);
-//           setTotalPages(json.totalPages);
-//           setMetrics(json.metrics || {});
-//         } else {
-//           console.error('API error:', json.error);
-//         }
-//       } catch (err) {
-//         console.error('Fetch error:', err);
-//       }
-//     };
-
-//     fetchFilteredTickets(); // Execute the fetch
-//  }, [selectedRegions, selectedCM, selectedTicketId, startDate, endDate, page]); // The dependency array
 
   const [timers, setTimers] = useState({});
 
@@ -236,12 +139,8 @@ const [selectedTicketId, setSelectedTicketId] = useState([]); // was null
     return () => clearInterval(interval);
   }, [projects]);
 
-  // const totalTickets = projects.length;
-  // const assignedCount = projects.filter(p => p.status === 'Assigned').length;
-  // const closedCount = projects.filter(p => p.status === 'Closed').length;
-  const [assignedCount, setAssignedCount] = useState(0);
-const [closedCount, setClosedCount] = useState(0);
-const [totalCount, setTotalCount] = useState(0);
+
+
 
 const [metrics, setMetrics] = useState({
   totalTickets: 0,
@@ -280,30 +179,68 @@ useEffect(() => {
     //   key: 'sno',
     //   render: (_, index) => index + 1
     // },
-    {
-      label: 'Ticket ID',
-      key: 'ticketKey',  // match your data field
-      render: (row) => {
-        const timeStr = timers[row.id] || '00:00:00';
-        const [h, m, s] = timeStr.split(':').map(Number);
-        const totalSeconds = h * 3600 + m * 60 + s;
-    
-        let badgeClass = 'bg-success';
-        if (totalSeconds <= 1800 && totalSeconds > 600) badgeClass = 'bg-warning text-dark';
-        if (totalSeconds <= 600) badgeClass = 'bg-danger';
-    
-    
-        return (
-          <span className={`badge ${badgeClass}`} style={{ fontSize: '0.9rem' }}>
-           {row.ticketKey}
-          </span>
-        );
-      }
-    },
+{
+  label: 'Ticket ID',
+  key: 'ticketKey',
+  render: (row) => {
+    const timeStr = timers[row.id] || '00:00:00';
+    const [h, m, s] = timeStr.split(':').map(Number);
+    const totalSeconds = h * 3600 + m * 60 + s;
+
+    let badgeClass = 'bg-success';
+    if (totalSeconds <= 1800 && totalSeconds > 600) badgeClass = 'bg-warning text-dark';
+    if (totalSeconds <= 600) badgeClass = 'bg-danger';
+
+    return (
+      <a
+        href={`https://netflix.atlassian.net/browse/${row.ticketKey}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`badge ${badgeClass}`}
+        style={{
+          fontSize: '0.9rem',
+          textDecoration: 'underline'
+        }}
+      >
+        {row.ticketKey}
+      </a>
+    );
+  }
+}
+,
+
     {
       label: 'Assigned Date & Time',
       key: 'created'
     },
+{
+  label: 'Updated Date & Time',
+  key: 'updated',
+  render: (row) => {
+    if (!row.updated) return '-';
+
+    // Convert "YYYY-MM-DD HH:mm:ss" to ISO string for parsing
+    const isoString = row.updated.replace(' ', 'T');
+
+    const dateObj = new Date(isoString);
+
+    if (isNaN(dateObj.getTime())) {
+      return row.updated; // fallback raw string if invalid date
+    }
+
+    // Extract parts to format as YYYY-MM-DD HH:mm:ss
+    const yyyy = dateObj.getFullYear();
+    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const dd = String(dateObj.getDate()).padStart(2, '0');
+    const hh = String(dateObj.getHours()).padStart(2, '0');      // 24-hour
+    const min = String(dateObj.getMinutes()).padStart(2, '0');
+    const ss = String(dateObj.getSeconds()).padStart(2, '0');
+
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+  }
+}
+
+,
     {
       label: (
         <div>
@@ -334,89 +271,103 @@ useEffect(() => {
       label: 'Region',
       key: 'cm_region'
     },
-    {
-      label: 'Status',
-      key: 'Status',
-      render: (row) => {
-        const isCM = user?.role === 'cm';
     
-        return (
-          <Select
-            options={[
-              { value: 'Interim', label: 'Interim' },
-              { value: 'Solution Provided', label: 'Solution Provided' },
-              { value: 'Need More Information', label: 'Need More Information' },
-              { value: 'Closed', label: 'Closed' },
-              {value:'Sent to VAO', label:'Sent to VAO'}
-            ]}
-            value={row.status ? { label: row.status, value: row.status } : null}
 
-            isDisabled={!isCM}
-            classNamePrefix="react-select"
-            placeholder="Select Status"
-            isClearable
-            styles={{
-              container: (base) => ({
-                ...base,
-                minWidth: 180
-              }),
-              menu: (provided) => ({ ...provided, zIndex: 9999 })
-            }}
-            onChange={async (selectedOption) => {
-              if (isCM && selectedOption?.value) {
-                try {
-                  const response = await fetch(
-                    `http://localhost:5000/api/updateTicketByKey/${row.ticketKey}`,
-                    {
-                      method: 'PUT',
-                      headers: {
-                        'Content-Type': 'application/json'
-                      },
-                      body: JSON.stringify({ status: selectedOption.value })
-                    }
-                  );
-    
-                  const result = await response.json();
-                  if (result.success) {
-                    console.log('✅ Status updated:', selectedOption.value);
-    
-                    // Optionally: Refresh data
-                    setProjects((prev) =>
-                      prev.map((p) =>
-                        p.ticketKey === row.ticketKey
-                          ? { ...p, status: selectedOption.value }
-                          : p
-                      )
-                    );
-                  } else {
-                    console.error('❌ Failed to update status:', result.error);
-                  }
-                } catch (err) {
-                  console.error('⛔ Error updating status:', err);
-                }
-              }
-            }}
-          />
+    {
+  label: 'Status',
+  key: 'status',
+  render: (row) => {
+    return (
+      <Select
+        options={[
+          { value: 'Start', label: 'Start' },
+          { value: 'Interim', label: 'Interim' },
+          { value: 'Solution Provided', label: 'Solution Provided' },
+          { value: 'Need More Information', label: 'Need More Information' },
+          { value: 'Closed', label: 'Closed' },
+          { value: 'Sent to VAO', label: 'Sent to VAO' }
+        ]}
+        value={row.status ? { label: row.status, value: row.status } : null}
+        isClearable
+        classNamePrefix="react-select"
+        styles={{
+          container: (base) => ({
+            ...base,
+            minWidth: 180
+          }),
+          menu: (provided) => ({ ...provided, zIndex: 9999 })
+        }}
+  
+ onChange={async (selectedOption) => {
+  if (selectedOption?.value) {
+    try {
+      // 1. Update status in backend
+      const response = await fetch(
+        `http://localhost:5000/api/updateTicketByKey/${row.ticketKey}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: selectedOption.value })
+        }
+      );
+
+      const updateResult = await response.json();
+
+      if (updateResult.success) {
+        console.log('✅ Status updated successfully');
+
+        // 2. Now fetch the fresh ticket list with your filters and page
+        const cmRegionList = selectedRegions.map(r => r.value).join(',');
+        const cmNameList = selectedCM.map(c => c.value).join(',');
+        const ticketKeyList = selectedTicketId.map(t => t.value).join(',');
+        const createdFrom = startDate ? startDate.toISOString().split('T')[0] : '';
+        const createdTo = endDate ? endDate.toISOString().split('T')[0] : '';
+
+        const res = await fetch(
+          `http://localhost:5000/api/getNetflixTickets?email=djavvaji@netflixcontractors.com&role=0&page=${page}&limit=25&cmRegionList=${cmRegionList}&cmNameList=${cmNameList}&ticketKeyList=${ticketKeyList}&createdFrom=${createdFrom}&createdTo=${createdTo}`
         );
+
+        const data = await res.json();
+
+        if (data.success) {
+          setProjects(data.data);  // Update the tickets list state
+          setTotalPages(data.totalPages || 1);  // Update pagination if needed
+          // You can also update any metrics here if returned
+        } else {
+          console.error('❌ Failed to refresh ticket list');
+        }
+      } else {
+        console.error('❌ Status update failed', updateResult.error);
       }
+    } catch (error) {
+      console.error('⛔ Error during status update or fetching tickets:', error);
     }
-,    
-    ...(user?.role === 'cm'
-      ? [
-        
-          {
-            label: 'Actions',
-            key: 'actions',
-            render: () => (
-              <div className="d-flex gap-2" style={{ display: "flex" }}>
-                <button className="btn btn-sm btn-success">Start</button>
-                <button className="btn btn-sm btn-danger">End</button>
-              </div>
-            )
-          }
-        ]
-      : [])
+  }
+}}
+
+
+      />
+    );
+  }
+}
+
+    
+
   ];
+  const resetFilters = () => {
+  setSelectedRegions([]);
+  setSelectedCM([]);
+  setSelectedTicketId([]);
+  setStartDate(null);
+  setEndDate(null);
+  setPage(1); // Optional: Reset to first page
+  setPaginationGroup(0);
+  fetchTickets();
+   // Optional: Reset to first pagination group
+};
+
 
   return (
     <div className="p-4">
@@ -425,9 +376,7 @@ useEffect(() => {
           <h1 className="fs-1 mb-0" style={{ fontSize: "16px" }}>
             <strong>Tickets List</strong>
           </h1>
-          {/* <button className="btn btn-success" style={{ fontSize: "16px", padding: "6px 12px" }}>
-            <strong>Count: {projects.length}</strong>
-          </button> */}
+
         </div>
 
         {/* Count Cards */}
@@ -515,6 +464,13 @@ useEffect(() => {
                 onChange={(e) => handleEndDateChange(e.target.value ? new Date(e.target.value) : null)}
               />
             </div>
+            
+  <button
+    className="btn btn-outline-secondary"
+    onClick={resetFilters}
+  >
+    Reset Filters
+  </button>
               </>
             )}
           </div>
@@ -543,32 +499,44 @@ useEffect(() => {
           </button>
         </div>
 
-        <ReusableTable columns={columns} data={projects} />
-        <div className="d-flex justify-content-between align-items-center mt-4">
-  {/* <button
-    className="btn btn-outline-primary"
-    onClick={() => setPage((p) => Math.max(p - 1, 1))}
-    disabled={page === 1}
-  >
-    Prev
-  </button>
-  
-  <span className="mx-3">
-    Page <strong>{page}</strong> of <strong>{totalPages}</strong>
-  </span>
+     {projects.length === 0 ? (
+  <div className="text-center text-muted py-4 fw-bold fs-5">
+    No Data Available
+  </div>
+) : (
+  <ReusableTable columns={columns} data={projects} />
+)}
 
-  <button
-    className="btn btn-outline-primary"
-    onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-    disabled={page === totalPages}
-  >
-    Next
-  </button> */}
+<div className="flex justify-content-center align-items-center mt-4 gap-2 flex-wrap" style={{justifyContent:"end"}}>
+  {getPageNumbers().map((p) => (
+    <button
+      key={p}
+      className={`btn ${page === p ? 'btn-primary' : 'btn-outline-primary'}`}
+      onClick={() => setPage(p)}
+    >
+      {p}
+    </button>
+  ))}
 
-<button className="btn btn-outline-primary" onClick={() => setPage((p) => Math.max(p - 1, 1))} disabled={page === 1}>Prev</button>
-<span className="mx-3"> Page <strong>{page}</strong> of <strong>{totalPages}</strong> </span>
-<button className="btn btn-outline-primary" onClick={() => setPage((p) => Math.min(p + 1, totalPages))} disabled={page === totalPages}>Next</button>
+  {(paginationGroup + 1) * pagesPerGroup < totalPages && (
+    <button
+      className="btn btn-outline-secondary"
+      onClick={() => setPaginationGroup((g) => g + 1)}
+    >
+      Next &rsaquo;
+    </button>
+  )}
+
+  {paginationGroup > 0 && (
+    <button
+      className="btn btn-outline-secondary"
+      onClick={() => setPaginationGroup((g) => g - 1)}
+    >
+      &lsaquo; Prev
+    </button>
+  )}
 </div>
+
 
       </Card> 
     </div>
