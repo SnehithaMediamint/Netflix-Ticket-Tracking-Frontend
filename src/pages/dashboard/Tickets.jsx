@@ -118,26 +118,37 @@ useEffect(() => {
     };
 
   const [timers, setTimers] = useState({});
-
   useEffect(() => {
     const interval = setInterval(() => {
       const newTimers = {};
-
-      projects.forEach((proj) => {
-        const diff = proj.endTimestamp - Date.now();
-        const totalSeconds = Math.max(0, Math.floor(diff / 1000));
-        const hrs = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-        const mins = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-        const secs = String(totalSeconds % 60).padStart(2, '0');
-
-        newTimers[proj.ticketKey] = `${hrs}:${mins}:${secs}`;
+  
+      tickets.forEach((ticket) => {
+        // Assuming you have a SLA start timestamp (example: ticket.createdAt)
+        const slaStartTime = new Date(ticket.createdAt).getTime();
+  
+        // SLA limit in milliseconds (2 hours)
+        const slaLimit = 2 * 60 * 60 * 1000;
+  
+        // Time left = SLA limit - time passed
+        const timeLeft = slaLimit - (Date.now() - slaStartTime);
+  
+        const totalSeconds = Math.floor(timeLeft / 1000);
+        const hrs = String(Math.floor(Math.abs(totalSeconds) / 3600)).padStart(2, '0');
+        const mins = String(Math.floor((Math.abs(totalSeconds) % 3600) / 60)).padStart(2, '0');
+        const secs = String(Math.abs(totalSeconds) % 60).padStart(2, '0');
+  
+        newTimers[ticket._id] = {
+          text: `${hrs}:${mins}:${secs}`,
+          expired: totalSeconds < 0 // expired means SLA passed
+        };
       });
-
-      setTimers(newTimers);
+  
+      setSlaTimers(newTimers);
     }, 1000);
-
+  
     return () => clearInterval(interval);
   }, [projects]);
+  
 
 
 
@@ -173,6 +184,49 @@ useEffect(() => {
   fetchDropdownData();
 }, []);
 
+
+function CountdownTimer({ timeRemaining }) {
+
+  const parseTimeToSeconds = (timeStr) => {
+    // Example: "-108:05:41" → negative
+    const isNegative = timeStr.startsWith("-");
+    const parts = timeStr.replace("-", "").split(":").map(Number);
+    const totalSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+    return isNegative ? -totalSeconds : totalSeconds;
+  };
+
+  const [secondsRemaining, setSecondsRemaining] = useState(
+    parseTimeToSeconds(timeRemaining)
+  );
+
+  useEffect(() => {
+    // Sync with backend whenever timeRemaining prop changes (e.g., on refresh)
+    setSecondsRemaining(parseTimeToSeconds(timeRemaining));
+  }, [timeRemaining]);
+
+  useEffect(() => {
+    const timerId = setInterval(() => {
+      setSecondsRemaining((prev) => prev - 1); // always decrement by 1 sec
+    }, 1000);
+    return () => clearInterval(timerId);
+  }, []);
+
+ const formatTime = (totalSeconds) => {
+    const isNegative = totalSeconds < 0;
+    const absSeconds = Math.abs(totalSeconds);
+    const hours = String(Math.floor(absSeconds / 3600)).padStart(2, "0");
+    const minutes = String(Math.floor((absSeconds % 3600) / 60)).padStart(2, "0");
+    const seconds = String(absSeconds % 60).padStart(2, "0");
+    return `${isNegative ? "-" : ""}${hours}:${minutes}:${seconds}`;
+  };
+
+
+  return (
+    <span style={{ fontWeight: "bold" }}>
+      {formatTime(secondsRemaining)}
+    </span>
+  );
+}
   const columns = [
     // {
     //   label: 'S. No',
@@ -250,16 +304,90 @@ useEffect(() => {
       ),
       key: 'SLA',
       render: (row) => {
-        const timeStr = timers[row.ticketKey] || '00:00:00';
-        const [h, m, s] = timeStr.split(':').map(Number);
-        const totalSeconds = h * 3600 + m * 60 + s;
+        //console.log(row.slaData.timeRemaining);
+        // const timeStr = row.slaData.timeRemaining || '00:00:00';
+        // const [h, m, s] = timeStr.split(':').map(Number);
+        // const totalSeconds = h * 3600 + m * 60 + s;
 
-        let color = 'green';
-        if (totalSeconds <= 2700 && totalSeconds > 1800) color = 'orange';
-        if (totalSeconds <= 1800) color = 'red';
+        // let color = 'green';
+        // if (totalSeconds <= 2700 && totalSeconds > 1800) color = 'orange';
+        // if (totalSeconds <= 1800) color = 'red';
+        // if(row.status == 'Need More Information' || row.status == 'Closed' || row.status == 'Sent to VAO'){
+        //   color = 'green';
+        //   return <span style={{ color, fontWeight: 'bold' }}>00:00:00</span>;
+        // }else{
+        //   //return <span style={{ color, fontWeight: 'bold' }}>{totalSeconds}</span>;
+        //   return <span style={{ color, fontWeight: 'bold' }}><CountdownTimer initialSeconds={totalSeconds} /></span>;
+        // }
 
+       // Convert "HH:MM:SS" or "-HH:MM:SS" to total seconds
+       const parseToSeconds = (timeStr) => {
+        if (!timeStr) return 0;
+        
+        const isNegative = timeStr.startsWith("-");
+        const cleanTime = timeStr.replace("-", "");
+        
+        const parts = cleanTime.split(":").map(Number);
+        let total = 0;
+        if (parts.length === 3) {
+          const [hh, mm, ss] = parts;
+          total = hh * 3600 + mm * 60 + ss;
+        }
+        return isNegative ? -total : total;
+      };
+      
+      const totalSeconds = parseToSeconds(row.slaData.timeRemaining);
+      
+      let color = "green";
+      
+      // Special statuses override everything
+      if (
+        row.status === "Need More Information" ||
+        row.status === "Closed" ||
+        row.status === "Sent to VAO"
+      ) {
+        color = "green";
+        return (
+          <span style={{ color }}>
+            <span style={{ fontWeight: "bold" }}>
+             {row.slaData.timeRemaining}
+            </span>
+          </span>
+        );
+      } else if (totalSeconds < 0) {
+        color = "red"; // overdue
+        return (
+          <span style={{ color }}>
+            <CountdownTimer timeRemaining={row.slaData.timeRemaining} />
+          </span>
+        );
+      } else if (totalSeconds <= 1800) {
+        color = "red"; // 30 min or less
+        return (
+          <span style={{ color }}>
+            <CountdownTimer timeRemaining={row.slaData.timeRemaining} />
+          </span>
+        );
+      } else if (totalSeconds <= 2700 && totalSeconds > 1800) {
+        color = "orange"; // 45–30 min
+        return (
+          <span style={{ color }}>
+            <CountdownTimer timeRemaining={row.slaData.timeRemaining} />
+          </span>
+        );
+      }else{
+        color = "green"; // 45–30 min
+         //console.log(row);
+        return (
+          <span style={{ color }}>
+            <CountdownTimer timeRemaining={row.slaData.timeRemaining} />
+          </span>
+        );
+      }
+      
+      
+      
 
-        return <span style={{ color, fontWeight: 'bold' }}>{timeStr}</span>;
       }
     },
     ...(user?.role !== 'cm' ? [{ label: 'Name of CM', key: 'CM_name' }] : []),
