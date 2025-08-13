@@ -102,6 +102,10 @@ useEffect(() => {
           `http://localhost:5000/api/getNetflixTickets?email=${email}&page=${page}&limit=25&cmRegionList=${cmRegionList}&cmNameList=${cmNameList}&ticketKeyList=${ticketKeyList}&createdFrom=${createdFrom}&createdTo=${createdTo}`
         );
         const json = await res.json();
+        //if (!json.success || !json.data || json.data.length === 0) {
+          //alert("No data to fetch");
+          //return;
+        //}
         if (json.success) {
             setProjects(json.data);
             setTotalPages(json.totalPages);
@@ -385,9 +389,6 @@ function CountdownTimer({ timeRemaining }) {
         );
       }
       
-      
-      
-
       }
     },
     ...(user?.role !== 'cm' ? [{ label: 'Name of CM', key: 'CM_name' }] : []),
@@ -405,6 +406,8 @@ function CountdownTimer({ timeRemaining }) {
   label: 'Status',
   key: 'status',
   render: (row) => {
+
+    
     return (
       <Select
         options={[
@@ -416,7 +419,8 @@ function CountdownTimer({ timeRemaining }) {
           { value: 'Sent to VAO', label: 'Sent to VAO' }
         ]}
         value={row.status ? { label: row.status, value: row.status } : null}
-        isClearable
+        isClearable={user?.role === 'cm'} // allow clearing only for CM
+        isDisabled={user?.role !== 'cm'} // disable for QM and others
         classNamePrefix="react-select"
         styles={{
           container: (base) => ({
@@ -495,6 +499,86 @@ function CountdownTimer({ timeRemaining }) {
   fetchTickets();
    // Optional: Reset to first pagination group
 };
+const downloadCSV = async () => {
+  try {
+    const cmRegionList = selectedRegions.map((r) => r.value).join(",");
+    const cmNameList = selectedCM.map((c) => c.value).join(",");
+    const ticketKeyList = selectedTicketId.map((t) => t.value).join(",");
+    const createdFrom = startDate ? startDate.toISOString().split("T")[0] : "";
+    const createdTo = endDate ? endDate.toISOString().split("T")[0] : "";
+
+    const res = await fetch(
+      `http://localhost:5000/api/getNetflixTickets?email=${email}&page=1&limit=999999&cmRegionList=${cmRegionList}&cmNameList=${cmNameList}&ticketKeyList=${ticketKeyList}&createdFrom=${createdFrom}&createdTo=${createdTo}`
+    );
+    const json = await res.json();
+
+    if (!json.success || !json.data || json.data.length === 0) {
+      alert("No data to download");
+      return;
+    }
+
+    const allTickets = json.data;
+
+    // Headers from columns
+    const headers = columns.map((col) =>
+      typeof col.label === "string"
+        ? col.label
+        : col.label?.props?.children?.[0] || ""
+    );
+
+    // Rows
+    const rows = allTickets.map((row) => {
+      return columns.map((col) => {
+        let val = "";
+
+        // Special handling for SLA column
+        if (col.key === "SLA" && row.slaData?.timeRemaining != null) {
+          val = row.slaData.timeRemaining; // keep the negative if exists
+        }
+        // If column has a key and exists in row
+        else if (col.key && row[col.key] !== undefined) {
+          val = row[col.key];
+        }
+        // If column has a render function, use it for CSV too
+        else if (typeof col.render === "function") {
+          const rendered = col.render(row);
+          // Extract text from JSX if needed
+          if (typeof rendered === "string") {
+            val = rendered;
+          } else if (React.isValidElement(rendered)) {
+            val = rendered.props?.children
+              ? (Array.isArray(rendered.props.children)
+                  ? rendered.props.children.join("")
+                  : rendered.props.children)
+              : "";
+          } else {
+            val = rendered ?? "";
+          }
+        }
+
+        if (typeof val === "object") val = JSON.stringify(val);
+        return `"${String(val).replace(/"/g, '""')}"`;
+      }).join(",");
+    });
+
+    // CSV Content
+    const csvContent = [headers.join(","), ...rows].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "tickets_report.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error("Error downloading CSV:", error);
+    alert("Error generating report");
+  }
+};
+
 
 
   return (
@@ -620,7 +704,9 @@ function CountdownTimer({ timeRemaining }) {
               borderRadius: '6px',
               padding: '8px 16px',
               display:"flex"
+              
             }}
+             onClick={downloadCSV}
           >
             <Download size={16} />
             Download Report
