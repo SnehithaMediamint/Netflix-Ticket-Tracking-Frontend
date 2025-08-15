@@ -7,7 +7,7 @@ import { Card } from 'react-bootstrap';
 import { Download } from 'lucide-react';
 
 const Tickets = () => {
-  const [showDateRange, setShowDateRange] = useState(false);
+  const [role, setRole] = useState(null);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
     const [assignedCount, setAssignedCount] = useState(0);
@@ -18,6 +18,13 @@ const [totalCount, setTotalCount] = useState(0);
   const [paginationGroup, setPaginationGroup] = useState(0); // 0 = pages 1-5, 1 = pages 6-10, etc.
 const pagesPerGroup = 5;
 
+const [selectedRegions, setSelectedRegions] = useState([]);
+const [selectedCM, setSelectedCM] = useState([]); // was null
+const [selectedTicketId, setSelectedTicketId] = useState([]); // was null
+
+const [allTicketsData, setAllTicketsData] = useState([]);
+const [cmOptions, setCmOptions] = useState([]);
+const [ticketIdOptions, setTicketIdOptions] = useState([]);
 
 
 
@@ -27,27 +34,51 @@ const pagesPerGroup = 5;
     closedTickets: 0,
   });
 
+  
+
+  const [projects, setProjects] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  
+const [dropdownData, setDropdownData] = useState([]);
+
+
+useEffect(() => {
+  const userData = JSON.parse(localStorage.getItem("user")); // stored after login
+  if (userData?.role !== undefined) {
+    setRole(userData.role);
+  }
+}, []);
 
   
-  const handleRegionChange = (selectedOptions) => {
-    setSelectedRegions(selectedOptions || []);
-    setPage(1); // Reset page to 1
-  };
+const handleRegionChange = (selectedOptions) => {
+  setSelectedRegions(selectedOptions || []);
+  setSelectedCM([]); // reset CM when region changes
+  setSelectedTicketId([]); // reset ticket IDs too
+  setPage(1);
+  setPaginationGroup(0);
+};
+
   const handleCmChange = (selectedOptions) => {
     setSelectedCM(selectedOptions || []);
-    setPage(1); // Reset page to 1
+     setSelectedTicketId([]);
+    setPage(1);
+    setPaginationGroup(0);
   };
   const handleTicketIdChange = (selectedOptions) => {
     setSelectedTicketId(selectedOptions || []);
     setPage(1); // Reset page to 1
+    setPaginationGroup(0);
   };
   const handleStartDateChange = (date) => {
     setStartDate(date);
     setPage(1); // Reset page to 1
+    setPaginationGroup(0);
   };
   const handleEndDateChange = (date) => {
     setEndDate(date);
     setPage(1); // Reset page to 1
+    setPaginationGroup(0);
   };
 
 
@@ -59,14 +90,7 @@ const pagesPerGroup = 5;
   ];
 
 
-  const [selectedRegions, setSelectedRegions] = useState([]);
-  const [selectedCM, setSelectedCM] = useState([]); // was null
-const [selectedTicketId, setSelectedTicketId] = useState([]); // was null
 
-
-  const [projects, setProjects] = useState([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
 
 const getPageNumbers = () => {
@@ -88,7 +112,7 @@ useEffect(() => {
  
 
     fetchTickets();
-  }, [selectedRegions, selectedCM, selectedTicketId, startDate, endDate, page,assignedCount,totalCount,closedCount]); // This hook reacts to all changes
+  }, [selectedRegions, selectedCM, selectedTicketId, startDate, endDate, page, ,assignedCount,totalCount,closedCount]); // This hook reacts to all changes, ,assignedCount,totalCount,closedCount removed for correct count as per accuracy
 
    const fetchTickets = async () => {
       const cmRegionList = selectedRegions.map((r) => r.value).join(',');
@@ -102,10 +126,6 @@ useEffect(() => {
           `http://localhost:5000/api/getNetflixTickets?email=${email}&page=${page}&limit=25&cmRegionList=${cmRegionList}&cmNameList=${cmNameList}&ticketKeyList=${ticketKeyList}&createdFrom=${createdFrom}&createdTo=${createdTo}`
         );
         const json = await res.json();
-        //if (!json.success || !json.data || json.data.length === 0) {
-          //alert("No data to fetch");
-          //return;
-        //}
         if (json.success) {
             setProjects(json.data);
             setTotalPages(json.totalPages);
@@ -120,6 +140,21 @@ useEffect(() => {
         console.error('Error fetching data:', err);
       }
     };
+
+    const fetchAllTicketsForDropdowns = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/getNetflixTickets?email=${email}&page=1&limit=999999`);
+        const json = await res.json();
+        if (json.success) {
+          setAllTicketsData(json.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch all ticket data for dropdowns", err);
+      }
+    };
+    useEffect(() => {
+      fetchAllTicketsForDropdowns();
+    }, []);
 
   const [timers, setTimers] = useState({});
   useEffect(() => {
@@ -171,7 +206,6 @@ useEffect(() => {
   setClosedCount(projects.filter(item => item.status === "Closed").length);
 }, [projects]);
 
-const [dropdownData, setDropdownData] = useState([]);
 useEffect(() => {
   const fetchDropdownData = async () => {
     try {
@@ -187,6 +221,25 @@ useEffect(() => {
 
   fetchDropdownData();
 }, []);
+
+useEffect(() => {
+  const filteredByRegion = selectedRegions.length > 0
+    ? allTicketsData.filter(t => selectedRegions.map(r => r.value).includes(t.cm_region))
+    : allTicketsData;
+
+  const uniqueCms = Array.from(new Set(filteredByRegion.map(t => t.CM_name))).filter(Boolean);
+  setCmOptions(uniqueCms.map(name => ({ value: name, label: name })));
+
+  const filteredByCm = selectedCM.length > 0
+    ? filteredByRegion.filter(t => selectedCM.map(c => c.value).includes(t.CM_name))
+    : filteredByRegion;
+
+  const uniqueTickets = Array.from(new Set(filteredByCm.map(t => t.ticketKey))).filter(Boolean);
+  setTicketIdOptions(uniqueTickets.map(key => ({ value: key, label: key })));
+}, [selectedRegions, selectedCM, allTicketsData]);
+
+
+
 
 
 function CountdownTimer({ timeRemaining }) {
@@ -389,6 +442,9 @@ function CountdownTimer({ timeRemaining }) {
         );
       }
       
+      
+      
+
       }
     },
     ...(user?.role !== 'cm' ? [{ label: 'Name of CM', key: 'CM_name' }] : []),
@@ -420,7 +476,7 @@ function CountdownTimer({ timeRemaining }) {
         ]}
         value={row.status ? { label: row.status, value: row.status } : null}
         isClearable={user?.role === 'cm'} // allow clearing only for CM
-        isDisabled={user?.role !== 'cm'} // disable for QM and others
+        // isDisabled={user?.role === 0} // disable for QM and others
         classNamePrefix="react-select"
         styles={{
           container: (base) => ({
@@ -583,6 +639,7 @@ const downloadCSV = async () => {
 
   return (
     <div className="p-4">
+
       <Card>
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h1 className="fs-1 mb-0" style={{ fontSize: "16px" }}>
@@ -608,92 +665,77 @@ const downloadCSV = async () => {
         </div>
 
         {/* Filter Section */}
-        <div className="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-2">
-          <div className="d-flex gap-3 mt-4 flex-wrap align-items-center" style={{display:"flex"}}>
-          {user?.role !== 'cm' && (
-            <div style={{ minWidth: 200 }}>
-              <Select
-                isMulti 
-                options={regionOptions}
-                value={selectedRegions}
-                onChange={handleRegionChange}
-                placeholder="Select Region(s)"
-                classNamePrefix="react-select"
-              />
-              
-            </div>
-              )}
-            {user?.role !== "cm" && (
-              <>
-                <div style={{ minWidth: 200 }}>
-                  <Select
-                    isClearable
-                    isMulti
-                    options={Array.from(
-                      new Set(dropdownData.map(item => item.ticketname))
-                    ).map(name => ({ value: name, label: name }))}
-                    placeholder="Select CM"
-                    value={selectedCM}
-                    onChange={handleCmChange}
-                  />
-                </div>
+        <div className="d-flex gap-3 mt-4 flex-wrap align-items-center" style={{display:"flex"}}>
+  {user?.role === 0 && (
+    <>
+      <div style={{ minWidth: 200 }}>
+        <Select
+          isMulti
+          options={regionOptions}
+          value={selectedRegions}
+          onChange={handleRegionChange}
+          placeholder="Select Region(s)"
+          classNamePrefix="react-select"
+        />
+      </div>
 
-                <div style={{ minWidth: 200 }}>
-                  <Select
-                    isClearable
-                    isMulti
-                    options={dropdownData.map(item => ({
-                      value: item.ticketkey,
-                      label: item.ticketkey
-                    }))}
-                    placeholder="Select Ticket ID"
-                    value={selectedTicketId}
-                    onChange={handleTicketIdChange}
-                  />
-                </div>
-                  <div className="form-group pe-3 flex">
-              <label htmlFor="fromDate" className="mb-1 " style={{display:"flex",alignItems:"center"}}><strong>From Date : </strong></label>
-              <input
-                type="date"
-                id="fromDate"
-                className="form-control p-2 ms-1"
-                value={startDate ? startDate.toISOString().split('T')[0] : ''}
-                 onChange={(e) => handleStartDateChange(e.target.value ? new Date(e.target.value) : null)}
-                max={new Date().toISOString().split('T')[0]}
+      <div style={{ minWidth: 200 }}>
+        <Select
+          isClearable
+          isMulti
+          options={cmOptions}
+          placeholder="Select CM"
+          value={selectedCM}
+          onChange={handleCmChange}
+        />
+      </div>
 
-                
-              />
-            </div>
-            <div className="form-group pe-3 flex">
-              <label htmlFor="toDate" className="mb-1" style={{display:"flex",alignItems:"center"}}><strong>To Date : </strong></label>
-              <input
-                type="date"
-                id="toDate"
-                className="form-control p-2 ms-1"
-                min={startDate ? startDate.toISOString().split('T')[0] : ''}
-                max={new Date().toISOString().split('T')[0]}
-                value={endDate ? endDate.toISOString().split('T')[0] : ''}
-                onChange={(e) => handleEndDateChange(e.target.value ? new Date(e.target.value) : null)}
-              />
-            </div>
-            
-  <button
-    className="btn btn-outline-secondary"
-    onClick={resetFilters}
-  >
-    Reset Filters
-  </button>
-              </>
-            )}
-          </div>
+      <div style={{ minWidth: 200 }}>
+        <Select
+          isClearable
+          isMulti
+          options={ticketIdOptions}
+          placeholder="Select Ticket ID"
+          value={selectedTicketId}
+          onChange={handleTicketIdChange}
+        />
+      </div>
 
-          {/* Date Range Filters */}
-          <div className="flex gap-4 py-3 px-2">
-          
-          </div>
-        </div>
+      <div className="form-group pe-3 flex">
+        <label htmlFor="fromDate" className="mb-1"><strong>From Date : </strong></label>
+        <input
+          type="date"
+          id="fromDate"
+          className="form-control p-2 ms-1"
+          value={startDate ? startDate.toISOString().split('T')[0] : ''}
+          onChange={(e) => handleStartDateChange(e.target.value ? new Date(e.target.value) : null)}
+          max={new Date().toISOString().split('T')[0]}
+        />
+      </div>
+
+      <div className="form-group pe-3 flex">
+        <label htmlFor="toDate" className="mb-1"><strong>To Date : </strong></label>
+        <input
+          type="date"
+          id="toDate"
+          className="form-control p-2 ms-1"
+          min={startDate ? startDate.toISOString().split('T')[0] : ''}
+          max={new Date().toISOString().split('T')[0]}
+          value={endDate ? endDate.toISOString().split('T')[0] : ''}
+          onChange={(e) => handleEndDateChange(e.target.value ? new Date(e.target.value) : null)}
+        />
+      </div>
+
+      <button className="btn btn-outline-secondary" onClick={resetFilters}>
+        Reset Filters
+      </button>
+    </>
+  )}
+</div>
+
 
         {/* Download Button */}
+        
         <div className="d-flex gap-2 mb-5 mt-3" style={{ justifyContent: "flex-end",display:"flex" }}>
           <button
             className="d-flex align-items-center gap-2"
@@ -708,7 +750,9 @@ const downloadCSV = async () => {
             }}
              onClick={downloadCSV}
           >
-            <Download size={16} />
+            <Download size={16}
+          
+            />
             Download Report
           </button>
         </div>
