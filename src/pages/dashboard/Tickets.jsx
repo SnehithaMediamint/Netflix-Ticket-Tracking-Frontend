@@ -112,7 +112,7 @@ useEffect(() => {
  
 
     fetchTickets();
-  }, [selectedRegions, selectedCM, selectedTicketId, startDate, endDate, page, ,assignedCount,totalCount,closedCount]); // This hook reacts to all changes, ,assignedCount,totalCount,closedCount removed for correct count as per accuracy
+  }, [selectedRegions, selectedCM, selectedTicketId, startDate, endDate, page]); // This hook reacts to all changes, ,assignedCount,totalCount,closedCount removed for correct count as per accuracy
 
    const fetchTickets = async () => {
       const cmRegionList = selectedRegions.map((r) => r.value).join(',');
@@ -447,7 +447,7 @@ function CountdownTimer({ timeRemaining }) {
 
       }
     },
-    ...(user?.role !== 'cm' ? [{ label: 'Name of CM', key: 'CM_name' }] : []),
+    ...(Number(user?.role) !== 1  ? [{ label: 'Name of CM', key: 'CM_name' }] : []),
     {
       label: 'Name of AM',
       key: 'AM_name'
@@ -475,7 +475,7 @@ function CountdownTimer({ timeRemaining }) {
           { value: 'Sent to VAO', label: 'Sent to VAO' }
         ]}
         value={row.status ? { label: row.status, value: row.status } : null}
-        isClearable={user?.role === 'cm'} // allow clearing only for CM
+        isClearable={Number(user?.role) === 1} // allow clearing only for CM
         // isDisabled={user?.role === 0} // disable for QM and others
         classNamePrefix="react-select"
         styles={{
@@ -514,7 +514,7 @@ function CountdownTimer({ timeRemaining }) {
         const createdTo = endDate ? endDate.toISOString().split('T')[0] : '';
 
         const res = await fetch(
-          `http://localhost:5000/api/getNetflixTickets?email=djavvaji@netflixcontractors.com&role=0&page=${page}&limit=25&cmRegionList=${cmRegionList}&cmNameList=${cmNameList}&ticketKeyList=${ticketKeyList}&createdFrom=${createdFrom}&createdTo=${createdTo}`
+          `http://localhost:5000/api/getNetflixTickets?email=${email}&role=0&page=${page}&limit=25&cmRegionList=${cmRegionList}&cmNameList=${cmNameList}&ticketKeyList=${ticketKeyList}&createdFrom=${createdFrom}&createdTo=${createdTo}`
         );
 
         const data = await res.json();
@@ -666,7 +666,7 @@ const downloadCSV = async () => {
 
         {/* Filter Section */}
         <div className="d-flex gap-3 mt-4 flex-wrap align-items-center" style={{display:"flex"}}>
-  {user?.role === 0 && (
+   {Number(user?.role) === 0 && (
     <>
       <div style={{ minWidth: 200 }}>
         <Select
@@ -720,7 +720,7 @@ const downloadCSV = async () => {
           id="toDate"
           className="form-control p-2 ms-1"
           min={startDate ? startDate.toISOString().split('T')[0] : ''}
-          max={new Date().toISOString().split('T')[0]}
+         // max={new Date().toISOString().split('T')[0]}
           value={endDate ? endDate.toISOString().split('T')[0] : ''}
           onChange={(e) => handleEndDateChange(e.target.value ? new Date(e.target.value) : null)}
         />
